@@ -1,0 +1,11 @@
+# Arquivos que o sistema 02 possui (o sync-core cria uma vez e nunca sobrescreve).
+package.json
+pnpm-lock.yaml
+lib/system.config.ts
+public/brand/**
+app/(app)/dashboard/**
+# Arquivos do Core que o sistema 02 não quer.
+-tests/e2e/core-dashboard.spec.ts
+-tests/e2e/screens.spec.ts
+lib/security/public-prefixes.ts
+.env.example
