@@ -35,9 +35,11 @@ do $$ begin perform set_config('t.b', public.create_organization('Métricas B', 
 reset role;
 
 -- ---------- ferramentas de fixture (superusuário; o que se prova é a leitura sob RLS) ----------
-create function test.d(p_days_ago int, p_time time default '12:00') returns timestamptz language sql stable as $$
-  select (((now() at time zone 'America/Sao_Paulo')::date - p_days_ago)::timestamp + p_time) at time zone 'America/Sao_Paulo'
-$$;
+-- Sem horário explícito, usa «agora menos 1 minuto» do dia pedido: a idade em dias (floor) fica exata a qualquer hora em que o teste/seed rode.
+create function test.d(p_days_ago int, p_time time default null) returns timestamptz language sql stable as $fn$
+  select (((now() at time zone 'America/Sao_Paulo')::date - p_days_ago)::timestamp
+    + coalesce(p_time, case when (now() at time zone 'America/Sao_Paulo')::time < time '00:02' then time '00:00' else (now() at time zone 'America/Sao_Paulo')::time - interval '1 minute' end)) at time zone 'America/Sao_Paulo'
+$fn$;
 create function test.mk(p_owner uuid, p_client uuid, p_title text, p_price bigint, p_type text, p_created int, p_sent int, p_valid int default 30, p_publish boolean default true)
 returns uuid language plpgsql as $$
 declare pid uuid; rid uuid;

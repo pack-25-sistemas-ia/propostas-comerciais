@@ -15,9 +15,11 @@
 --   leitor@demo.exemplo     leitor        (somente leitura)
 -- ============================================================================================
 
-create function pg_temp.d(p_days_ago int, p_time time default '12:00') returns timestamptz language sql stable as $$
-  select (((now() at time zone 'America/Sao_Paulo')::date - p_days_ago)::timestamp + p_time) at time zone 'America/Sao_Paulo'
-$$;
+-- Sem horário explícito, usa «agora menos 1 minuto» do dia pedido: a idade em dias (floor) fica exata a qualquer hora em que o teste/seed rode.
+create function pg_temp.d(p_days_ago int, p_time time default null) returns timestamptz language sql stable as $fn$
+  select (((now() at time zone 'America/Sao_Paulo')::date - p_days_ago)::timestamp
+    + coalesce(p_time, case when (now() at time zone 'America/Sao_Paulo')::time < time '00:02' then time '00:00' else (now() at time zone 'America/Sao_Paulo')::time - interval '1 minute' end)) at time zone 'America/Sao_Paulo'
+$fn$;
 
 -- Só no seed: desliga/religa os gatilhos de regra (dono das tabelas pode; o papel postgres do Supabase não é superusuário).
 create function pg_temp.triggers(p_on boolean) returns void language plpgsql as $f$
